@@ -18,7 +18,24 @@ This analysis uses all **10,000,000** rows in the synthetic Swift payment file. 
 
 The values use `USD_AMOUNT`, an already USD-normalised field. The labelled values are extremely concentrated: fat-finger mistakes account for about 99.2% of labelled-anomaly value despite representing 27.7% of labelled payments. For prioritisation, separate **value exposure** from **event frequency**.
 
-## Party findings to validate with the queries
+## Party-pair results
+
+The streaming full-file cross-check produced the following rates. The rate denominator is every payment in the party pair, while labelled value sums only records with a nonblank anomaly label.
+
+| Party pair | Payments | Labelled payments | Labelled-anomaly rate | Labelled USD value |
+|---|---:|---:|---:|---:|
+| B→B | 2,270,945 | 1,060 | 0.0467% | $130.96bn |
+| B→C | 5,603,692 | 2,727 | 0.0487% | $37.86bn |
+| C→B | 610,605 | 843 | 0.1381% | $2.79bn |
+| C→C | 1,514,758 | 2,376 | 0.1569% | $5.00bn |
+
+Consumer-originating relationships have higher labelled-event rates than business-originating relationships, while B→B carries the greatest labelled value because fat-finger labels dominate its value. This supports using event-rate and value-exposure views together. It does not prove that any party type causes an anomaly.
+
+## Account-concentration result
+
+The most recurrent labelled accounts in the full-file cross-check are generally **beneficiary accounts with romance-scam labels**. The leading account appears in 35 labelled payments and 41 total beneficiary-side payments. This is suitable for a synthetic account-triage example, but it is not a real customer finding. One high-volume synthetic account had 12 fat-finger labels across 75,803 ordering-side payments, illustrating why labelled count must be compared with total account activity.
+
+## Party findings and next checks
 
 1. Use query 2 to calculate the labelled-anomaly rate within each B→B, B→C, C→B and C→C group. Compare rates rather than counts because the party-pair populations differ.
 2. Use query 3 to identify whether a label is concentrated in a particular party relationship and whether its duration differs materially. This is evidence of a dataset rule only when supported by rates and denominators.
