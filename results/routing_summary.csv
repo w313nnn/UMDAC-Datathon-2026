@@ -1,0 +1,7 @@
+route_type,continuous_path,payment_count,missing_duration,min_seconds,average_seconds,max_seconds
+Covered,N,51262,0,3,986.91,13888
+Covered,Y,364700,0,3,916.48,13008
+Direct,N,315266,0,2,664.46,11241
+Direct,Y,6008014,0,2,663.25,12711
+Indirect,N,400676,0,3,1025.72,21649
+Indirect,Y,2860082,0,3,952.77,18234
