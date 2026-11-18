@@ -1,4 +1,3 @@
--- UMDAC Datathon 2026 | Hui Min | routing-analysis
 -- Purpose: compare route types and path continuity across all payments.
 -- Requires MySQL 8.0 and the populated swift_datathon.swift_payments table.
 -- Read-only: this script does not create, import or modify data.
