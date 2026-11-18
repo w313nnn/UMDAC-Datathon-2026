@@ -1,12 +1,20 @@
-# Vincent's workstream: party behaviour and labelled anomalies
+# Vincent's findings: customer groups and supplied anomaly labels
 
-## Scope and method
+## 1. What this work covers
 
-This analysis uses all **10,000,000** rows in the synthetic Swift payment file. `party_anomalies.sql` contains the reproducible MySQL 8 queries; `analyze_party_anomalies.py` is a streaming cross-check against the original CSV. `B` denotes a business party and `C` a consumer party. A blank `ANOMALY_TYPE` is treated as `None`.
+We are looking for rules that may have generated the fictitious Swift payments. B means business and C means consumer. These are payment counts, not counts of different people.
 
-## Verified label profile
+`party_anomalies.sql` contains MySQL 8 queries. `analyze_party_anomalies.py` reads the original CSV without loading the whole file into memory. The scripts treat NULL, an empty label, spaces and the literal `None` as unlabelled. Other labels are trimmed and converted to upper case. `CUSTOMER_RECALL` stays visible as a supplied label. Its competition scope still needs confirmation from the organiser FAQ.
 
-| Label | Payments | Share of payments | USD amount | Share of total labelled-anomaly USD |
+## 2. Evidence status
+
+The tables below preserve figures reported in the earlier branch log. The branch did not include the result CSVs supporting them. The revised scripts have been checked on a small test dataset, but the revised full-data results still need to be run and compared. Treat these figures as **reported results awaiting confirmation**, and replace them if the rerun differs.
+
+Do not call a Python result a verified SQL cross-check until the comparison option reports a match. The Python script compares the three exported summary tables by their keys and numeric values. It stops on a difference.
+
+## 3. Reported label profile
+
+| Label | Payments | Share of all payments | Payment value in USD | Share of labelled payment value |
 |---|---:|---:|---:|---:|
 | Romance scam | 2,476 | 0.02476% | $4.85m | 0.003% |
 | Fat-finger mistake | 1,940 | 0.01940% | $175.14bn | 99.17% |
@@ -14,46 +22,77 @@ This analysis uses all **10,000,000** rows in the synthetic Swift payment file. 
 | Duplicate payment | 679 | 0.00679% | $96.65m | 0.05% |
 | Account-replacement scam | 649 | 0.00649% | $37.20m | 0.02% |
 | Customer recall | 317 | 0.00317% | $31.20m | 0.02% |
-| All labelled payments | 7,006 | 0.07006% | $176.62bn | — |
+| All labelled payments | 7,006 | 0.07006% | $176.62bn | 100% |
 
-The values use `USD_AMOUNT`, an already USD-normalised field. The labelled values are extremely concentrated: fat-finger mistakes account for about 99.2% of labelled-anomaly value despite representing 27.7% of labelled payments. For prioritisation, separate **value exposure** from **event frequency**.
+The counts add to 7,006. Monetary figures are rounded, so displayed subtotals may differ from displayed totals. Use exact CSV sums for calculations.
 
-## Party-pair results
+Romance-scam labels are the most common of the listed labels. Fat-finger labels account for about 99.2% of the reported labelled payment value, although they represent about 27.7% of labelled payments. This is the value of payments carrying the labels. We do not know how much money was lost, recovered or settled.
 
-The streaming full-file cross-check produced the following rates. The rate denominator is every payment in the party pair, while labelled value sums only records with a nonblank anomaly label.
+Query 1 exports two different value shares:
 
-| Party pair | Payments | Labelled payments | Labelled-anomaly rate | Labelled USD value |
+- `share_of_all_payment_value_pct`: label value divided by the value of every payment, including unlabelled payments.
+- `share_of_labelled_payment_value_pct`: label value divided by the value of all labelled payments. This is the denominator used in the table above. The unlabelled row has no share in this column.
+
+Evidence file to upload: `party_evidence/label_profile.csv`.
+
+## 4. Reported customer-group results
+
+| Customer pair | All payments in pair | Labelled payments | Labelled rate | Labelled payment value |
 |---|---:|---:|---:|---:|
-| B→B | 2,270,945 | 1,060 | 0.0467% | $130.96bn |
-| B→C | 5,603,692 | 2,727 | 0.0487% | $37.86bn |
-| C→B | 610,605 | 843 | 0.1381% | $2.79bn |
-| C→C | 1,514,758 | 2,376 | 0.1569% | $5.00bn |
+| B to B | 2,270,945 | 1,060 | 0.0467% | $130.96bn |
+| B to C | 5,603,692 | 2,727 | 0.0487% | $37.86bn |
+| C to B | 610,605 | 843 | 0.1381% | $2.79bn |
+| C to C | 1,514,758 | 2,376 | 0.1569% | $5.00bn |
 
-Consumer-originating relationships have higher labelled-event rates than business-originating relationships, while B→B carries the greatest labelled value because fat-finger labels dominate its value. This supports using event-rate and value-exposure views together. It does not prove that any party type causes an anomaly.
+The pair counts add to 10,000,000 and their labelled counts add to 7,006. Each rate uses all payments in that pair as its denominator.
 
-## Account-concentration result
+The reported label rates are higher for payments from consumers. B-to-B has the largest labelled payment value. The overall label profile alone does not prove which label explains B-to-B value. Use query 3 to check the label mix within each pair before making that claim.
 
-The most recurrent labelled accounts in the full-file cross-check are generally **beneficiary accounts with romance-scam labels**. The leading account appears in 35 labelled payments and 41 total beneficiary-side payments. This is suitable for a synthetic account-triage example, but it is not a real customer finding. One high-volume synthetic account had 12 fat-finger labels across 75,803 ordering-side payments, illustrating why labelled count must be compared with total account activity.
+Evidence files to upload: query 2 gives `party_pair_profile.csv`; query 3 gives `party_pair_labels.csv`. Query 3 includes unlabelled rows so that counts reconcile. Each label rate still uses all payments in the pair.
 
-## Party findings and next checks
+## 5. Reported account examples
 
-1. Use query 2 to calculate the labelled-anomaly rate within each B→B, B→C, C→B and C→C group. Compare rates rather than counts because the party-pair populations differ.
-2. Use query 3 to identify whether a label is concentrated in a particular party relationship and whether its duration differs materially. This is evidence of a dataset rule only when supported by rates and denominators.
-3. Use query 4 for account-level triage. An account repeated in labelled rows deserves review only if it has a meaningful labelled count or rate relative to its total activity. It does **not** establish a bad actor because all IDs are synthetic and labels are generator-supplied.
-4. Use query 5 to inspect possible duplicate-payment patterns. Matching account pair, currency and amount is a screening heuristic, not proof. Compare timestamps and the supplied `DUPLICATE_PAYMENT` label before describing a rule.
+The earlier log reported a leading account with 35 labelled payments out of 41 beneficiary-side payments. It also reported an ordering account with 12 fat-finger labels out of 75,803 payments. The account IDs and result rows were not supplied, so these examples remain unconfirmed.
 
-## Candidate business rule
+Run Python with `--accounts` to produce `account_label_history.csv`. This takes a second pass through the CSV. It saves every nonblank account-and-label combination found in labelled rows, including the total history count for that account role. A row's rate refers to its particular label, not necessarily every label on the account. Ordering and beneficiary roles remain separate. This cannot establish whether accounts in different roles belong to the same person.
 
-Treat `ANOMALY_TYPE` as an outcome label for model evaluation and data profiling, not as an independently verified fraud event. A useful first-stage screening policy combines party relationship, account recurrence, route integrity and payment value; it should preserve a human-review or confirmation step.
+Optional SQL query 4 checks one chosen account. Query 5 lists up to 200 payments for a chosen account pair. A repeated account pair, amount and currency can be legitimate. Check timestamps and supplied labels before proposing a duplicate rule. These optional queries still scan the table; no runtime is guaranteed.
 
-## Limits and error checks
+## 6. Proposed rules to test
 
-- The file is explicitly fictitious and generated by rules. Observed relationships describe the synthetic generator, not real customer behaviour or fraud prevalence.
-- `ANOMALY_TYPE` has no evidence of independent adjudication. Never use it as ground truth for a production threshold.
-- USD values permit aggregation but original amount, FX rate, settlement outcome, customer geography and device or channel details are unavailable.
-- The existing full-file quality review found 972,971 BIC-path endpoint mismatches and 767,204 path/participant-count mismatches. Route consistency should be checked before using route features in a risk score.
-- `CONTINUITY_QFLAG` matches the path/participant-count consistency result exactly in the supplied file. It is a derived duplicate control, not independent evidence.
+**Customer-pair hypothesis:** the generator may assign different label probabilities to different customer pairs. The overall reported rates support investigating this. Check each label separately using query 3. Geography and the mix of labels may explain part of the overall difference.
 
-## Suggested dashboard items
+**Amount hypothesis:** the generator may make some fat-finger payments unusually large. Their reported value share supports investigating the idea. Compare amounts within the same customer pair before claiming a multiplier or threshold. Query 3 gives totals, but a specific amount rule needs distributions or thresholds from the payment-amount analysis.
 
-Use one chart per feature group: (1) labelled-payment rate by party pair, (2) labelled value by anomaly label on a log scale or with a clear note about fat-finger dominance, (3) top account recurrence after reviewing query 4. Show denominators and label the results as **synthetic, supplied labels**.
+**Account hypothesis:** the generator may reuse some beneficiary accounts across romance-labelled payments. Confirm the account evidence and compare with total activity before describing this as a rule.
+
+These are hypotheses about generated data. A screening policy is a separate recommendation and does not explain how the dataset was created.
+
+## 7. What Vincent should do next
+
+1. Open the updated SQL in Workbench. Highlight and run query 1 only. Export the Result Grid as `sql_exports/label_profile.csv`.
+2. Run query 2 and export `sql_exports/party_pair_profile.csv`. Run query 3 and export `sql_exports/party_pair_labels.csv`. Keep numeric cells unformatted. Do not run the whole SQL file at once.
+3. Run Python from a terminal. Change the path inside the quotes to the original CSV on your laptop:
+
+   ```powershell
+   python analyze_party_anomalies.py --source "C:/path/to/swift_payments.csv" --output-dir party_evidence --compare-dir sql_exports
+   ```
+
+   This reads the CSV once and checks all three SQL exports. It uses Python's standard library. If the comparison fails, keep both sets of results and investigate the named row and column. Do not edit numbers just to make them match. Python stops on missing or invalid amounts rather than silently skipping records.
+
+4. Check `quality_counts.csv` for 10,000,000 rows, 7,006 reported labelled rows, and any unexpected customer codes. Zero and negative amounts are counted and retained, as in the SQL. Confirm any difference from the earlier log.
+5. Only if account examples are needed, rerun with `--accounts` added. This reads the CSV twice. Pick a nonblank account from the output, enter its role and ID in SQL query 4, and compare the account counts.
+6. Upload the generated evidence CSVs to `party-anomalies`. Keep the 5 GB original CSV out of GitHub. Update this log with the actual rerun totals and the comparison status.
+7. Make a chart of labelled rates by customer pair and a chart of labelled payment value by label. State the denominator on each chart. Use the label-by-pair table to decide which proposed rule the evidence supports. Discuss sensible feature grouping with the team so each feature group has at most one findings slide.
+
+The fastest useful next step is queries 1-3 and their saved results. Account and duplicate checks are optional follow-up work.
+
+## 8. Limits and unresolved checks
+
+- The labels come from fictitious data. They do not establish real fraud rates or customer behaviour. Customer recall may describe a different kind of event from a scam.
+- Bank location does not establish customer nationality. Label rates can differ because countries, banks or customer groups have different mixes of payments.
+- Payment value does not measure loss. The summaries do not establish settlement outcomes or payment purpose.
+- The extra country checks in the currency work do not validate these anomaly rules. These hypotheses need their own supporting checks.
+- The earlier log reported 972,971 BIC-path endpoint mismatches, 767,204 path/participant-count mismatches, and an exact match between the continuity flag and a path consistency check. No supporting routing query or result was included in these three files. These remain unverified routing claims. Get the routing evidence from that workstream before using them.
+- Python uses Decimal for sums. The scripts normalise label case and ASCII spaces. MySQL collation can still handle unusual characters or account IDs differently from Python. The comparison step helps reveal differences in summaries; selected account checks need their own review.
+- Python's optional account pass stores labelled account keys in memory. It avoids storing all ten million rows, but memory use still grows with the number of labelled accounts.
