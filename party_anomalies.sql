@@ -1,95 +1,96 @@
--- UMDAC Datathon 2026 | Vincent: party behaviour and labelled anomalies
--- Requires the 10,000,000-row swift_datathon.swift_payments table.
+-- MySQL 8. Run ONE numbered query at a time; export each Result Grid as CSV.
+-- Full-table scans can still take time. LIMIT does not limit scan work.
 USE swift_datathon;
 
--- 1. Label prevalence and USD exposure. Blank labels are treated as unlabeled.
-SELECT
-    COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None') AS anomaly_type,
-    COUNT(*) AS payment_count,
-    ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 4) AS payment_share_pct,
-    ROUND(SUM(usd_amount), 2) AS usd_amount,
-    ROUND(100.0 * SUM(usd_amount) / SUM(SUM(usd_amount)) OVER (), 4) AS value_share_pct,
-    ROUND(AVG(usd_amount), 2) AS mean_usd_amount
-FROM swift_payments
-GROUP BY COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None')
-ORDER BY payment_count DESC;
+-- Shared convention: trim ASCII spaces; NULL, blank and literal 'None'
+-- (case-insensitive) mean unlabelled. Other labels are upper-case.
+-- CUSTOMER_RECALL is retained as a supplied label; FAQ scope remains unresolved.
 
--- 2. Party-pair exposure. B = business and C = consumer.
--- Compare rates within party pairs, not raw anomaly counts alone.
-SELECT
-    CONCAT(ordering_type, '->', beneficiary_type) AS party_pair,
-    COUNT(*) AS payment_count,
-    SUM(COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None') <> 'None') AS labelled_anomaly_count,
-    ROUND(100.0 * AVG(COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None') <> 'None'), 4) AS labelled_anomaly_rate_pct,
-    ROUND(SUM(CASE WHEN COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None') <> 'None' THEN usd_amount ELSE 0 END), 2) AS labelled_usd_amount
-FROM swift_payments
-WHERE ordering_type IN ('B', 'C') AND beneficiary_type IN ('B', 'C')
-GROUP BY ordering_type, beneficiary_type
-ORDER BY labelled_anomaly_rate_pct DESC, payment_count DESC;
-
--- 3. Party pair by anomaly label. This shows which labelled behaviour occurs
--- in which payment relationship; retain the denominator from query 2.
-SELECT
-    CONCAT(ordering_type, '->', beneficiary_type) AS party_pair,
-    COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None') AS anomaly_type,
-    COUNT(*) AS payment_count,
-    ROUND(SUM(usd_amount), 2) AS usd_amount,
-    ROUND(AVG(total_duration), 2) AS mean_duration_seconds
-FROM swift_payments
-WHERE ordering_type IN ('B', 'C') AND beneficiary_type IN ('B', 'C')
-  AND COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None') <> 'None'
-GROUP BY ordering_type, beneficiary_type, COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None')
-ORDER BY anomaly_type, payment_count DESC;
-
--- 4. Account concentration. Synthetic account IDs may repeat. This query
--- identifies accounts appearing in labelled payments and gives each account's
--- complete payment history in this file. Do not identify real customers.
-WITH labelled_accounts AS (
-    SELECT 'Ordering' AS account_role, ordering_account AS account, anomaly_type
-    FROM swift_payments
-    WHERE NULLIF(TRIM(anomaly_type), '') IS NOT NULL
-    UNION ALL
-    SELECT 'Beneficiary', beneficiary_account, anomaly_type
-    FROM swift_payments
-    WHERE NULLIF(TRIM(anomaly_type), '') IS NOT NULL
-),
-all_accounts AS (
-    SELECT 'Ordering' AS account_role, ordering_account AS account, usd_amount
-    FROM swift_payments
-    UNION ALL
-    SELECT 'Beneficiary', beneficiary_account, usd_amount
-    FROM swift_payments
+-- 1. Export as label_profile.csv. Both value denominators are explicit.
+WITH grouped AS (
+ SELECT CASE WHEN anomaly_type IS NULL OR TRIM(anomaly_type) = ''
+                  OR UPPER(TRIM(anomaly_type)) = 'NONE' THEN 'None'
+             ELSE UPPER(TRIM(anomaly_type)) END AS anomaly_type,
+        COUNT(*) AS payment_count,
+        SUM(usd_amount) AS usd_amount
+ FROM swift_payments
+ GROUP BY 1
 )
-SELECT
-    l.account_role,
-    l.account,
-    l.anomaly_type,
-    COUNT(*) AS labelled_payment_count,
-    a.all_payment_count,
-    ROUND(a.all_usd_amount, 2) AS all_usd_amount
-FROM labelled_accounts l
-JOIN (
-    SELECT account_role, account, COUNT(*) AS all_payment_count, SUM(usd_amount) AS all_usd_amount
-    FROM all_accounts
-    GROUP BY account_role, account
-) a ON a.account_role = l.account_role AND a.account = l.account
-GROUP BY l.account_role, l.account, l.anomaly_type, a.all_payment_count, a.all_usd_amount
-ORDER BY labelled_payment_count DESC, all_usd_amount DESC
-LIMIT 50;
+SELECT anomaly_type, payment_count,
+ ROUND(100.0 * payment_count / SUM(payment_count) OVER (), 5) AS payment_share_pct,
+ ROUND(usd_amount, 2) AS usd_amount,
+ ROUND(100.0 * usd_amount / NULLIF(SUM(usd_amount) OVER (), 0), 5)
+     AS share_of_all_payment_value_pct,
+ CASE WHEN anomaly_type = 'None' THEN NULL ELSE
+ ROUND(100.0 * usd_amount / NULLIF(SUM(CASE WHEN anomaly_type <> 'None'
+                    THEN usd_amount ELSE 0 END) OVER (), 0), 5)
+ END AS share_of_labelled_payment_value_pct
+FROM grouped ORDER BY payment_count DESC, anomaly_type;
 
--- 5. Candidate duplicate-payment investigation. This does not prove a duplicate:
--- it flags records sharing source account, beneficiary account, currency and value.
-SELECT
-    ordering_account,
-    beneficiary_account,
-    currency_code,
-    usd_amount,
-    COUNT(*) AS matching_payment_count,
-    MIN(epoch_seconds) AS first_epoch,
-    MAX(epoch_seconds) AS last_epoch,
-    SUM(COALESCE(NULLIF(TRIM(anomaly_type), ''), 'None') = 'DUPLICATE_PAYMENT') AS supplied_duplicate_labels
+-- 2. Export as party_pair_profile.csv. Denominator = all B/C payments in each pair.
+WITH cleaned AS (
+ SELECT ordering_type, beneficiary_type, usd_amount,
+ CASE WHEN anomaly_type IS NULL OR TRIM(anomaly_type) = ''
+                  OR UPPER(TRIM(anomaly_type)) = 'NONE' THEN 0 ELSE 1 END AS labelled
+ FROM swift_payments
+ WHERE ordering_type IN ('B', 'C') AND beneficiary_type IN ('B', 'C')
+)
+SELECT CONCAT(ordering_type, '->', beneficiary_type) AS party_pair,
+ COUNT(*) AS payment_count, SUM(labelled) AS labelled_payment_count,
+ ROUND(100.0 * SUM(labelled) / COUNT(*), 5) AS labelled_rate_pct,
+ ROUND(SUM(CASE WHEN labelled = 1 THEN usd_amount ELSE 0 END), 2) AS labelled_usd_amount
+FROM cleaned GROUP BY ordering_type, beneficiary_type ORDER BY party_pair;
+
+-- 3. Export as party_pair_labels.csv. Includes unlabelled rows for reconciliation.
+-- Each label rate uses ALL payments in that party pair, not just labelled rows.
+WITH grouped AS (
+ SELECT CONCAT(ordering_type, '->', beneficiary_type) AS party_pair,
+ CASE WHEN anomaly_type IS NULL OR TRIM(anomaly_type) = ''
+                  OR UPPER(TRIM(anomaly_type)) = 'NONE' THEN 'None'
+             ELSE UPPER(TRIM(anomaly_type)) END AS anomaly_type,
+ COUNT(*) AS payment_count, SUM(usd_amount) AS usd_amount
+ FROM swift_payments
+ WHERE ordering_type IN ('B', 'C') AND beneficiary_type IN ('B', 'C')
+ GROUP BY 1, 2
+)
+SELECT party_pair, anomaly_type, payment_count,
+ SUM(payment_count) OVER (PARTITION BY party_pair) AS pair_payment_count,
+ ROUND(100.0 * payment_count /
+       SUM(payment_count) OVER (PARTITION BY party_pair), 5) AS label_rate_pct,
+ ROUND(usd_amount, 2) AS usd_amount
+FROM grouped ORDER BY party_pair, anomaly_type;
+
+-- 4. OPTIONAL: one account's history. Choose a nonblank account from Python's
+-- account_label_history.csv. Set role to exactly Ordering or Beneficiary.
+-- This avoids grouping all 20 million account appearances; it still scans data.
+SET @account_role = 'Beneficiary';
+SET @account_id = NULL; -- CHANGE THIS: e.g. 'synthetic-account-id'
+WITH history AS (
+ SELECT CASE WHEN anomaly_type IS NULL OR TRIM(anomaly_type) = ''
+                  OR UPPER(TRIM(anomaly_type)) = 'NONE' THEN 'None'
+             ELSE UPPER(TRIM(anomaly_type)) END AS anomaly_type, usd_amount
+ FROM swift_payments
+ WHERE @account_id IS NOT NULL AND TRIM(@account_id) <> ''
+ AND ((@account_role = 'Ordering' AND ordering_account = @account_id)
+   OR (@account_role = 'Beneficiary' AND beneficiary_account = @account_id))
+)
+SELECT anomaly_type, COUNT(*) AS payment_count,
+ SUM(COUNT(*)) OVER () AS account_payment_count,
+ ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 5) AS label_rate_pct,
+ ROUND(SUM(usd_amount), 2) AS usd_amount
+FROM history GROUP BY anomaly_type ORDER BY payment_count DESC, anomaly_type;
+
+-- 5. OPTIONAL: matching payments for ONE chosen account pair.
+-- Repeated values can be legitimate. Check elapsed time and supplied labels.
+-- Intentionally no automatic full-file duplicate GROUP BY.
+SET @ordering_account = NULL;    -- CHANGE THIS to a quoted account ID
+SET @beneficiary_account = NULL; -- CHANGE THIS to a quoted account ID
+SELECT epoch_seconds, currency_code, usd_amount, anomaly_type
 FROM swift_payments
-GROUP BY ordering_account, beneficiary_account, currency_code, usd_amount
-HAVING COUNT(*) > 1
-ORDER BY matching_payment_count DESC, supplied_duplicate_labels DESC
-LIMIT 100;
+WHERE @ordering_account IS NOT NULL AND TRIM(@ordering_account) <> ''
+  AND @beneficiary_account IS NOT NULL AND TRIM(@beneficiary_account) <> ''
+  AND ordering_account = @ordering_account
+  AND beneficiary_account = @beneficiary_account
+ORDER BY epoch_seconds, currency_code, usd_amount
+LIMIT 200;
+-- This returns a capped inspection sample, not a count of all duplicates.
