@@ -233,3 +233,39 @@ The currency, amount and romance sections are ready for initial chart building. 
 - Consumer-origin totals reconcile to 2,125,363 payments and 2,476 romance labels.
 
 These checks are useful but are not a complete audit of every data field.
+
+## Additional-country checks and what they add
+
+Updated: 18 November 2026. Supporting SQL: [validate_currency_and_amount_rules.sql](validate_currency_and_amount_rules.sql). Results supplied by the team are recorded on the workbook's Additional_Country_Checks tab.
+
+| Sending bank country | Local share, non-US receiver | Local share, US receiver | USD share, non-US receiver | USD share, US receiver |
+|---|---:|---:|---:|---:|
+| AU | 83.99% | 83.07% | 2.19% | 8.29% |
+| CA | 85.08% | 79.49% | 3.08% | 12.73% |
+| JP | 88.62% | 86.45% | 1.68% | 6.33% |
+
+Local currency remains common in all six groups. USD share rises with a US receiving bank in all three origins. This supports a rule where sending location sets much of the currency mix and receiving location adjusts it. It does not show who chose the currency.
+
+For AU to US, CA to US and JP to US, B-to-B has the highest share above each amount threshold ($1,000, $10,000 and $100,000), and C-to-C has the lowest. Mixed groups fall between them, with no fixed order. The smallest customer group has 1,547 payments.
+
+At $10,000, the shares are:
+
+| Pair | B to B | B to C | C to B | C to C |
+|---|---:|---:|---:|---:|
+| AU to US | 68.94% | 31.08% | 30.82% | 7.07% |
+| CA to US | 70.54% | 33.30% | 35.16% | 7.75% |
+| JP to US | 57.42% | 23.49% | 22.42% | 3.75% |
+
+These checks use additional countries, but the records were already in the overall summaries. They are not independent holdouts. All amount-validation routes end in the US. Thresholds support the broad amount ordering but do not recover the exact generation formula.
+
+### What Swift can learn from these findings
+
+Currency: an overall customer-type comparison can be misleading when the bank-country mixes differ. Compare similar geographic groups before interpreting a difference as customer behaviour. The adjusted business/consumer USD gap almost disappears.
+
+Amounts: a single typical payment value hides large differences between customer pairs. Medians describe the middle more clearly than averages when the upper end is large. Geography still matters within customer groups.
+
+These are explanations of the synthetic dataset. Payment motives and operational outcomes are unknown. We have not measured financial savings, fraud losses or a production detection benefit.
+
+### Before combining the final submission
+
+Each feature group should state its proposed generation rule, show the relevant denominator and chart, explain the method, and keep the main limitation visible. Label economic explanations as possible explanations. Currency and amounts cover two parts of the dataset; routing, duration, conversion and anomaly results still need team review. Avoid presenting a collection of charts as a complete reconstruction of all 21 fields.
