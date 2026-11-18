@@ -8,9 +8,9 @@ We are looking for rules that may have generated the fictitious Swift payments. 
 
 ## 2. Evidence status
 
-The tables below preserve figures reported in the earlier branch log. The branch did not include the result CSVs supporting them. The revised scripts have been checked on a small test dataset, but the revised full-data results still need to be run and compared. Treat these figures as **reported results awaiting confirmation**, and replace them if the rerun differs.
+On 18 November 2026, the revised Python script processed the original 10,000,000-row CSV and wrote the four evidence files in `party_evidence/`. The rerun reproduces the previously reported 7,006 labelled rows, the label profile and the customer-pair summaries shown below. It also found zero negative and zero zero-value payment rows.
 
-Do not call a Python result a verified SQL cross-check until the comparison option reports a match. The Python script compares the three exported summary tables by their keys and numeric values. It stops on a difference.
+The independent MySQL query exports and Python-versus-SQL comparison remain pending because the local MySQL server was not reachable during this run. Do not call the result a verified SQL cross-check until the comparison option reports a match. The Python script compares the three exported summary tables by their keys and numeric values and stops on a difference.
 
 ## 3. Reported label profile
 
