@@ -1,4 +1,3 @@
--- UMDAC Datathon 2026 | Hui Min | routing-analysis
 -- Purpose: compare duration across FX counts within each route type and size.
 -- Requires MySQL 8.0 and the populated swift_datathon.swift_payments table.
 -- Read-only: this script does not create, import or modify data.
