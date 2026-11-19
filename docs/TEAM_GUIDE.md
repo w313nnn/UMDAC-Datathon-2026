@@ -145,7 +145,7 @@ ORDER BY sending_bank_us, receiving_bank_us;
 
 ## Deliverables and judging
 
-Based on the supplied competition PDFs, the preliminary submission closes at noon on 19 November 2026. Use the official channels for updates and the submission link.
+The organiser’s final announcement sets the preliminary deadline at 11:59 PM on 19 November 2026. Upload both PDFs before the deadline. The organiser disallows edits, additions and replacements after submission. Use the official submission form linked in the team Discord.
 
 - Dashboard PDF with 5-15 pages, organised by feature group, showing proposed rules and supporting charts.
 - Presentation PDF with 10-20 slides including introduction and methodology. At most one findings slide per feature group.

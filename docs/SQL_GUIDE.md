@@ -2,14 +2,14 @@
 
 Use MySQL 8.0 and open the scripts in MySQL Workbench. The data must already be imported into `swift_datathon.swift_payments`.
 
-1. If the table is missing, read `import_swift.sql` and change its CSV path to the permitted folder on your own computer. Do not import again into an already populated table.
+1. If the table is missing, read [import_swift.sql](../sql/import_swift.sql) and change its CSV path to the permitted folder on your own computer. Do not import again into an already populated table.
 2. Open one analysis script at a time. Run one statement at a time, especially files containing multiple queries.
 3. Export the small result table as CSV for Excel. Keep the SQL filename with the results.
-4. Use INSIGHTS_LOG.md to understand the results and their limits.
+4. Use [INSIGHTS_LOG.md](INSIGHTS_LOG.md) to understand the results and their limits.
 
 ## Files uploaded on 16 November 2026
 
-All SQL filenames referenced in the insights log are now in this branch: 17 SQL files including the two existing import/currency-use files.
+The 16 November collection contained 17 SQL files, including the import and currency-use scripts. The scripts for all three workstreams are now in the [sql folder](../sql/).
 
 The local file named currency_receiving_country.sql actually contained the Singapore version. In GitHub:
 - currency_receiving_country.sql is the GB-origin comparison reconstructed from the original query.
@@ -26,9 +26,3 @@ The scripts were reviewed against the queries and results in our chat. They were
 - The SECOND statement in payment_amount_anomaly_check.sql previously took about 59 minutes. Reuse saved results when possible.
 - romance_labels_by_country_pair.sql returned 31,235 rows. Use romance_top_country_pairs.sql for a 30-row view.
 - Analysis scripts read the data; import_swift.sql creates/imports data.
-
-## Branches
-
-This work was authored by the user, so the scripts and insights log are collected on currency-dashboard, including the exploratory anomaly scripts. Hui Min and Vincent can read/download them from this branch.
-
-The first upload also reached main before the request to use personal branches arrived. Those copies remain on main. Future work should go to the author's branch first.

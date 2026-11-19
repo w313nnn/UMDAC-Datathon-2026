@@ -4,11 +4,11 @@
 
 We are looking for rules that may have generated the fictitious Swift payments. B means business and C means consumer. These are payment counts, not counts of different people.
 
-`party_anomalies.sql` contains MySQL 8 queries. `analyze_party_anomalies.py` reads the original CSV without loading the whole file into memory. The scripts treat NULL, an empty label, spaces and the literal `None` as unlabelled. Other labels are trimmed and converted to upper case. `CUSTOMER_RECALL` stays visible as a supplied label. Its competition scope still needs confirmation from the organiser FAQ.
+[party_anomalies.sql](../sql/party_anomalies.sql) contains MySQL 8 queries. [analyze_party_anomalies.py](../scripts/analyze_party_anomalies.py) reads the original CSV without loading the whole file into memory. The scripts treat NULL, an empty label, spaces and the literal `None` as unlabelled. Other labels are trimmed and converted to upper case. `CUSTOMER_RECALL` stays visible as a supplied label. Its competition scope still needs confirmation from the organiser FAQ.
 
 ## 2. Evidence status
 
-On 18 November 2026, the revised Python script processed the original 10,000,000-row CSV and wrote the four evidence files in `party_evidence/`. The rerun reproduces the previously reported 7,006 labelled rows, the label profile and the customer-pair summaries shown below. It also found zero negative and zero zero-value payment rows.
+On 18 November 2026, the revised Python script processed the original 10,000,000-row CSV and wrote the four evidence files in [evidence/party/](../evidence/party/). The rerun reproduces the previously reported 7,006 labelled rows, the label profile and the customer-pair summaries shown below. It also found zero negative and zero zero-value payment rows.
 
 The independent MySQL query exports and Python-versus-SQL comparison remain pending because the local MySQL server was not reachable during this run. Do not call the result a verified SQL cross-check until the comparison option reports a match. The Python script compares the three exported summary tables by their keys and numeric values and stops on a difference.
 
@@ -33,7 +33,7 @@ Query 1 exports two different value shares:
 - `share_of_all_payment_value_pct`: label value divided by the value of every payment, including unlabelled payments.
 - `share_of_labelled_payment_value_pct`: label value divided by the value of all labelled payments. This is the denominator used in the table above. The unlabelled row has no share in this column.
 
-Evidence file to upload: `party_evidence/label_profile.csv`.
+Evidence file to upload: [evidence/party/label_profile.csv](../evidence/party/label_profile.csv).
 
 ## 4. Reported customer-group results
 
@@ -70,12 +70,12 @@ These are hypotheses about generated data. A screening policy is a separate reco
 
 ## 7. What Vincent should do next
 
-1. Open the updated SQL in Workbench. Highlight and run query 1 only. Export the Result Grid as `sql_exports/label_profile.csv`.
-2. Run query 2 and export `sql_exports/party_pair_profile.csv`. Run query 3 and export `sql_exports/party_pair_labels.csv`. Keep numeric cells unformatted. Do not run the whole SQL file at once.
-3. Run Python from a terminal. Change the path inside the quotes to the original CSV on your laptop:
+1. Open the updated SQL in Workbench. Highlight and run query 1 only. Export the Result Grid as `evidence/party-sql/label_profile.csv`.
+2. Run query 2 and export `evidence/party-sql/party_pair_profile.csv`. Run query 3 and export `evidence/party-sql/party_pair_labels.csv`. Keep numeric cells unformatted. Do not run the whole SQL file at once.
+3. Run Python from the repository root. Change the path inside the quotes to the original CSV on your laptop:
 
    ```powershell
-   python analyze_party_anomalies.py --source "C:/path/to/swift_payments.csv" --output-dir party_evidence --compare-dir sql_exports
+   python scripts/analyze_party_anomalies.py --source "C:/path/to/swift_payments.csv" --output-dir evidence/party --compare-dir evidence/party-sql
    ```
 
    This reads the CSV once and checks all three SQL exports. It uses Python's standard library. If the comparison fails, keep both sets of results and investigate the named row and column. Do not edit numbers just to make them match. Python stops on missing or invalid amounts rather than silently skipping records.

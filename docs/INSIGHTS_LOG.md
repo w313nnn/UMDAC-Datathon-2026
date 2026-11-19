@@ -11,7 +11,7 @@ These findings come from SQL results shared during our analysis. They are not cl
 
 **A pattern is not proof of a cause.** For example, if a currency is common for a bank location, we know it was used often. We do not know who chose it or why.
 
-SQL filenames below are the names agreed during our work. Some may still be saved only on a teammate's laptop. Listing a filename here does not mean it has already been uploaded to GitHub.
+The SQL links below open the team’s scripts in the [sql folder](../sql/).
 
 ## Words we use
 
@@ -35,12 +35,12 @@ Amounts in the amount analysis are expressed in USD. This does not mean all thos
 
 **D01 — Import succeeded.** We imported 10,000,000 payments, with zero skipped rows and zero import warnings. A later row count matched.
 
-- SQL: `import_swift.sql`
+- SQL: [import_swift.sql](../sql/import_swift.sql)
 - Limit: this confirms the import, not that every value is realistic.
 
 **D02 — Basic amount checks passed.** All 10 million payments had a positive, non-missing amount. The four B/C sender–recipient combinations appeared. Each group's minimum was $0.01.
 
-- SQL: `payment_amount_profile.sql`
+- SQL: [payment_amount_profile.sql](../sql/payment_amount_profile.sql)
 - Limit: we have not completed every data-quality check. Positive amounts can still be mistakes.
 
 ## 2. Currency: what money unit was used?
@@ -60,7 +60,7 @@ The adjusted difference was only -0.0036 percentage points.
 
 **Meaning:** the original gap almost disappeared after accounting for sending-bank country.
 
-- SQL: `currency_use.sql`
+- SQL: [currency_use.sql](../sql/currency_use.sql)
 - Coverage: 226 country codes and 9,999,993 payments; seven payments were outside this comparison.
 - Limit: this does not mean customer type never matters.
 
@@ -73,7 +73,7 @@ The adjusted difference was only -0.0036 percentage points.
 | Sending bank only in US | 1,196,817 | 89.43% |
 | Both banks in US | 385,598 | 93.93% |
 
-- SQL: `currency_use.sql`
+- SQL: [currency_use.sql](../sql/currency_use.sql)
 - Limit: this is about bank locations, not customer nationality or personal preference.
 
 ### C03 — Other sending locations also favoured particular currencies
@@ -89,7 +89,7 @@ The adjusted difference was only -0.0036 percentage points.
 | FR | EUR | 94.02% |
 | DE | EUR | 94.46% |
 
-- SQL: `currency_country_patterns.sql`
+- SQL: [currency_country_patterns.sql](../sql/currency_country_patterns.sql)
 - Coverage: 86 country/territory codes with at least 10,000 eligible payments.
 - Limit: shares differ; do not claim every country uses one currency exactly 90% of the time. A full country–currency mapping has not been checked.
 
@@ -108,7 +108,7 @@ The adjusted difference was only -0.0036 percentage points.
 
 **Meaning:** EUR use was higher for French and German destinations. USD use was higher for US destinations. The sending location's main currency still dominated these examples.
 
-- SQL: `currency_receiving_country.sql`, `currency_receiving_country_sg.sql`
+- SQL: [currency_receiving_country.sql](../sql/currency_receiving_country.sql), [currency_receiving_country_sg.sql](../sql/currency_receiving_country_sg.sql)
 - Important correction: the Singapore currency code is **SGD**, not SG. Use the corrected saved query.
 - Limit: these are selected examples, and other factors may differ between groups.
 
@@ -122,7 +122,7 @@ The adjusted difference was only -0.0036 percentage points.
 
 **Meaning:** the destination pattern remained after separating business and consumer senders.
 
-- SQL: `currency_sg_cn_breakdown.sql`, `currency_sg_cn_sender_type.sql`
+- SQL: [currency_sg_cn_breakdown.sql](../sql/currency_sg_cn_breakdown.sql), [currency_sg_cn_sender_type.sql](../sql/currency_sg_cn_sender_type.sql)
 - Limit: we cannot infer the recipient's final currency, conversion details or customer motives from these summaries.
 
 **Working currency rule:** currency use is linked with both bank locations. Sending location has a strong association, while receiving location helps explain additional differences.
@@ -146,7 +146,7 @@ All values below are expressed in USD.
 
 Every average is much higher than its median. Large payments strongly affect the averages. The largest B → B payment was about $15.66 billion.
 
-- SQL: `payment_amount_profile.sql`, `payment_amount_percentiles.sql`
+- SQL: [payment_amount_profile.sql](../sql/payment_amount_profile.sql), [payment_amount_percentiles.sql](../sql/payment_amount_percentiles.sql)
 - Limit: an extreme amount is not automatically an error. Similar mixed-group summaries do not mean identical distributions. We have not identified a mathematical distribution.
 
 ### P03 — The ordering remained within sending countries
@@ -155,7 +155,7 @@ In CN, GB, MY, SG and US, the same broad ordering appeared at both the median an
 
 Geography also differed: B → B medians were $6,915.54 for CN, $7,038.39 for MY, $24,037.41 for GB, $41,811.10 for SG and $46,170.87 for US.
 
-- SQL: `payment_amount_by_sending_country.sql`
+- SQL: [payment_amount_by_sending_country.sql](../sql/payment_amount_by_sending_country.sql)
 - Limit: five selected origins; differences in destinations, banks and currencies remain.
 
 ### P04 — The ordering remained within fixed country pairs
@@ -173,7 +173,7 @@ Median amounts, rounded to the nearest dollar:
 
 The same ordering held at P90. Every group contained at least 1,151 payments. B → B medians were about 50–65 times C → C medians within these pairs.
 
-- SQL: `payment_amount_by_country_pair.sql`
+- SQL: [payment_amount_by_country_pair.sql](../sql/payment_amount_by_country_pair.sql)
 - Limit: selected pairs, not every pair. Individual banks, accounts, time and currency remain uncontrolled. Mixed-group direction sometimes differs, so do not call those groups identical.
 
 **Working amount rule:** customer-type combinations are associated with payment size, even when we compare the same bank-country pair.
@@ -223,7 +223,7 @@ A possible explanation is that some typing mistakes create large amounts. We hav
 
 **Meaning:** flagging large payments alone would miss most labels and flag many unlabelled records.
 
-- SQL for A01–A03: `payment_amount_anomaly_check.sql`
+- SQL for A01–A03: [payment_amount_anomaly_check.sql](../sql/payment_amount_anomaly_check.sql)
 - Limits: NULL is not verified normal. Label definitions need checking against the case documentation. These thresholds were tested on the same data used to calculate them, not unseen data. Ties make the upper band slightly larger than 1%.
 - Runtime note: this query took about **59 minutes**. Keep its results; do not rerun it without a reason.
 
@@ -235,7 +235,7 @@ Across consumer-origin payments, **1,206 of 2,476 labels (48.7%)** were below $1
 
 The highest initial subgroup rate was consumer → business, different bank countries, under $100: **309 labels among 40,791 payments (0.7575%)**.
 
-- SQL: `romance_scam_profile.sql`
+- SQL: [romance_scam_profile.sql](../sql/romance_scam_profile.sql)
 - Limit: this pooled result mixes countries. Do not turn it into a universal rule.
 
 ### R02 — Within countries, the small-payment pattern sometimes reversed
@@ -253,7 +253,7 @@ For CN with business recipients, the pattern went the other way: **117.46 below 
 
 **Meaning:** country and recipient type change the comparison. The overall small-payment association is not consistent everywhere.
 
-- SQL: `romance_small_payments_by_country.sql`
+- SQL: [romance_small_payments_by_country.sql](../sql/romance_small_payments_by_country.sql)
 - Limit: this query showed only groups with at least 1,000 payments in each band. Receiving countries were not fixed individually. Zero observed labels does not mean impossible.
 
 ### R03 — Sending-country counts and rates tell different stories
@@ -275,7 +275,7 @@ IN and CN together have **902 labels: 36.43% of all romance labels**, but only *
 
 Count means “how many labelled records?” Rate means “how common is the label within this group?” Both matter.
 
-- SQL: `romance_labels_by_sending_country.sql`
+- SQL: [romance_labels_by_sending_country.sql](../sql/romance_labels_by_sending_country.sql)
 - Check: totals matched 2,125,363 consumer payments and 2,476 romance labels.
 - Limit: countries have different destination and recipient mixes. Tiny groups can have high but unstable rates.
 
@@ -298,7 +298,7 @@ IN → CN had the most labels in the ranking, but some smaller pairs had higher 
 
 **Meaning:** sending country alone hides important destination differences.
 
-- SQL: `romance_labels_by_country_pair.sql`, `romance_top_country_pairs.sql`
+- SQL: [romance_labels_by_country_pair.sql](../sql/romance_labels_by_country_pair.sql), [romance_top_country_pairs.sql](../sql/romance_top_country_pairs.sql)
 - Limit: pairs were selected using their labels in this same dataset. This is discovery, not proof of future detection performance. Some groups are small; repeated accounts or individual banks may explain the concentration.
 - Output note: the full query returned 31,235 groups. Use the top-30 query for reading. The first uploaded full-output attachment contained only the zero-label tail, so it could not establish the leading pairs.
 

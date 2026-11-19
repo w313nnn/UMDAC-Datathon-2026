@@ -1,7 +1,7 @@
 # Team handover: findings and SQL files
 
 Updated: 16 November 2026  
-For Hui Min, Vincent and our team. Branch: **currency-dashboard**.
+For Hui Min, Vincent and our team. The scripts are in the [sql folder](../sql/).
 
 ## How to use this log
 
@@ -26,7 +26,7 @@ These are synthetic payments, not real-world country risk statistics. B means bu
 
 **Insight:** the overall difference almost disappears when we account for sending-bank country. We should not present it as a simple business-versus-consumer preference.
 
-**SQL:** [currency_use.sql](currency_use.sql), queries 1 and 2.
+**SQL:** [currency_use.sql](../sql/currency_use.sql), queries 1 and 2.
 
 **Chart:** grouped bars showing business and consumer USD shares before and after adjustment.
 
@@ -54,12 +54,12 @@ Within fixed origins:
 **Insight / candidate rule:** the sending location's currency is often dominant, while receiving location helps explain additional currency differences.
 
 **SQL**
-- [currency_use.sql](currency_use.sql), query 3: four US-location groups.
-- [currency_country_patterns.sql](currency_country_patterns.sql): main currencies by origin.
-- [currency_receiving_country.sql](currency_receiving_country.sql): GB origin.
-- [currency_receiving_country_sg.sql](currency_receiving_country_sg.sql): SG origin.
-- [currency_sg_cn_breakdown.sql](currency_sg_cn_breakdown.sql): individual currencies for SG→CN and SG→SG.
-- [currency_sg_cn_sender_type.sql](currency_sg_cn_sender_type.sql): separate business and consumer senders.
+- [currency_use.sql](../sql/currency_use.sql), query 3: four US-location groups.
+- [currency_country_patterns.sql](../sql/currency_country_patterns.sql): main currencies by origin.
+- [currency_receiving_country.sql](../sql/currency_receiving_country.sql): GB origin.
+- [currency_receiving_country_sg.sql](../sql/currency_receiving_country_sg.sql): SG origin.
+- [currency_sg_cn_breakdown.sql](../sql/currency_sg_cn_breakdown.sql): individual currencies for SG→CN and SG→SG.
+- [currency_sg_cn_sender_type.sql](../sql/currency_sg_cn_sender_type.sql): separate business and consumer senders.
 
 **Chart:** horizontal bars for the four US-location groups; a small comparison chart for CNY or EUR as supporting evidence.
 
@@ -89,10 +89,10 @@ For example, within SG→CN, B→B median was $40,355.07 versus $696.29 for C→
 **Insight / candidate rule:** two-business payments tend to be largest, mixed pairs intermediate and two-consumer payments smallest. The pattern remains in the country groups and pairs tested.
 
 **SQL**
-- [payment_amount_profile.sql](payment_amount_profile.sql): counts, averages and basic checks.
-- [payment_amount_percentiles.sql](payment_amount_percentiles.sql): overall medians and P90.
-- [payment_amount_by_sending_country.sql](payment_amount_by_sending_country.sql): five origins.
-- [payment_amount_by_country_pair.sql](payment_amount_by_country_pair.sql): six pairs.
+- [payment_amount_profile.sql](../sql/payment_amount_profile.sql): counts, averages and basic checks.
+- [payment_amount_percentiles.sql](../sql/payment_amount_percentiles.sql): overall medians and P90.
+- [payment_amount_by_sending_country.sql](../sql/payment_amount_by_sending_country.sql): five origins.
+- [payment_amount_by_country_pair.sql](../sql/payment_amount_by_country_pair.sql): six pairs.
 
 **Chart:** colour-shaded table of medians by country pair and customer group. Show P90 separately if needed; avoid squeezing very different values onto an unreadable scale.
 
@@ -110,7 +110,7 @@ Within C→C:
 
 **Insight:** averages can give a very different impression from typical payments because of the large upper end. Use median with P90 when explaining payment size.
 
-**SQL:** [payment_amount_profile.sql](payment_amount_profile.sql), [payment_amount_percentiles.sql](payment_amount_percentiles.sql), [payment_amount_by_country_pair.sql](payment_amount_by_country_pair.sql).
+**SQL:** [payment_amount_profile.sql](../sql/payment_amount_profile.sql), [payment_amount_percentiles.sql](../sql/payment_amount_percentiles.sql), [payment_amount_by_country_pair.sql](../sql/payment_amount_by_country_pair.sql).
 
 **Chart:** average-versus-median comparison, or use this as a note on the amount page.
 
@@ -131,7 +131,7 @@ Within C→C:
 
 **Insight:** different label types have different amount patterns. A single large-payment rule is not enough.
 
-**SQL:** [payment_amount_anomaly_check.sql](payment_amount_anomaly_check.sql). Query 1 lists labels; query 2 compares bands.
+**SQL:** [payment_amount_anomaly_check.sql](../sql/payment_amount_anomaly_check.sql). Query 1 lists labels; query 2 compares bands.
 
 **Chart:** label rates above/below P99 by customer group, or a short comparison of labels captured versus missed.
 
@@ -159,8 +159,8 @@ For consumer recipients with banks in different countries:
 **Insight:** “small payments have more romance labels” is a pooled observation, not a universal rule. Country and recipient composition matter.
 
 **SQL**
-- [romance_scam_profile.sql](romance_scam_profile.sql): pooled amount bands and bank-country relationship.
-- [romance_small_payments_by_country.sql](romance_small_payments_by_country.sql): country comparisons.
+- [romance_scam_profile.sql](../sql/romance_scam_profile.sql): pooled amount bands and bank-country relationship.
+- [romance_small_payments_by_country.sql](../sql/romance_small_payments_by_country.sql): country comparisons.
 
 **Chart:** small-versus-larger rate bars for selected countries, including both supporting examples and reversals.
 
@@ -190,9 +190,9 @@ IN→CN had the most labels in the ranking; it did not have the highest rate. ID
 **Insight / candidate rule:** receiving location adds important information. Labels are unevenly concentrated in particular bank-country pairs, rather than being explained by sending country or amount alone.
 
 **SQL**
-- [romance_labels_by_sending_country.sql](romance_labels_by_sending_country.sql): origins and recipient type.
-- [romance_labels_by_country_pair.sql](romance_labels_by_country_pair.sql): full pairs and recipient type.
-- [romance_top_country_pairs.sql](romance_top_country_pairs.sql): top 30 pairs, recipient types combined.
+- [romance_labels_by_sending_country.sql](../sql/romance_labels_by_sending_country.sql): origins and recipient type.
+- [romance_labels_by_country_pair.sql](../sql/romance_labels_by_country_pair.sql): full pairs and recipient type.
+- [romance_top_country_pairs.sql](../sql/romance_top_country_pairs.sql): top 30 pairs, recipient types combined.
 
 **Chart:** counts and rates side by side, with total payment counts visible. A 100% rate based on 16 records must not look as certain as a rate based on thousands.
 
@@ -236,7 +236,7 @@ These checks are useful but are not a complete audit of every data field.
 
 ## Additional-country checks and what they add
 
-Updated: 18 November 2026. Supporting SQL: [validate_currency_and_amount_rules.sql](validate_currency_and_amount_rules.sql). Results supplied by the team are recorded on the workbook's Additional_Country_Checks tab.
+Updated: 18 November 2026. Supporting SQL: [validate_currency_and_amount_rules.sql](../sql/validate_currency_and_amount_rules.sql). Results supplied by the team are recorded on the workbook's Additional_Country_Checks tab.
 
 | Sending bank country | Local share, non-US receiver | Local share, US receiver | USD share, non-US receiver | USD share, US receiver |
 |---|---:|---:|---:|---:|

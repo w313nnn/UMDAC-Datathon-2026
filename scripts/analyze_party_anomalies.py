@@ -1,7 +1,8 @@
 """Stream Swift CSV with Decimal sums; optionally compare MySQL CSV exports.
 
-python analyze_party_anomalies.py --source "C:/path/payments.csv" --output-dir evidence
-Add --accounts for a second pass. Add --compare-dir sql_exports to verify queries 1-3.
+From the repository root:
+python scripts/analyze_party_anomalies.py --source "C:/path/payments.csv" --output-dir evidence/party
+Add --accounts for a second pass. Add --compare-dir evidence/party-sql to verify queries 1-3.
 No third-party packages needed. Inputs are read only; outputs go to output-dir.
 """
 import argparse
@@ -170,7 +171,7 @@ def run(source, output, accounts=False, compare_dir=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', required=True, type=Path)
-    parser.add_argument('--output-dir', type=Path, default=Path('party_evidence'))
+    parser.add_argument('--output-dir', type=Path, default=Path('evidence/party'))
     parser.add_argument('--accounts', action='store_true')
     parser.add_argument('--compare-dir', type=Path)
     args = parser.parse_args()
