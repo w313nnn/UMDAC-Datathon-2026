@@ -1,0 +1,5 @@
+party_pair,payment_count,labelled_payment_count,labelled_rate_pct,labelled_usd_amount
+B->B,2270945,1060,0.04668,130960806006.73
+B->C,5603692,2727,0.04866,37862518840.31
+C->B,610605,843,0.13806,2792462409.62
+C->C,1514758,2376,0.15686,5000228080.00
